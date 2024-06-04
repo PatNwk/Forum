@@ -1,0 +1,29 @@
+.sidebar {
+    position: fixed; /* Position fixe pour rester visible lors du défilement */
+    top: 0; /* Distance par rapport au haut de la page */
+    left: 0; /* Distance par rapport à la gauche de la page */
+    width: 15%; /* Largeur de la barre latérale */
+    height: 100%; /* Hauteur de la barre latérale, cela permettra de la remplir verticalement */
+    background-color: #ffffff; /* Couleur de fond de la barre latérale */
+    padding-top: 60px; /* Espace pour le header */
+    overflow-y: auto; /* Ajouter une barre de défilement si le contenu dépasse la hauteur de la barre latérale */
+    z-index: 1; /* Assurez-vous que la barre latérale est au-dessus du reste du contenu */
+}
+
+.sidebar nav ul {
+    padding: 0;
+    margin: 0;
+}
+
+.sidebar nav ul li {
+    list-style-type: none;
+    margin-bottom: 50px;
+    display: block;
+}
+
+h4{
+    text-align: center;
+    margin-top: 10%;
+    font-size: 2vw;
+    margin-bottom: 50%;
+}

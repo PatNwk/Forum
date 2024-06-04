@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/static/rrr.css">
+    <link rel="stylesheet" href="/static/h.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
+    <script src="main.js"></script>
+    <title>Rubrique</title>
+</head>
+<body>
+    <!-- Barre latérale pour afficher les rubriques -->
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <h4>Rubriques</h4>
+                <!-- Boucle sur les rubriques pour afficher chaque rubrique dans la barre latérale -->
+                {{ range .Rubriques }}
+                <li><a href="/rubrique?id={{ .ID }}">{{ .Nom }}</a></li>
+                {{ end }}
+                <!-- Bouton pour créer une nouvelle rubrique -->
+                <li><button id="show-create-rubrique-form">Créer une rubrique</button></li>
+            </ul>
+        </nav>
+        <section id="create-rubrique-form" style="display: none;">
+            <h2>Créer une nouvelle rubrique</h2>
+            <form action="/create-rubrique" method="post">
+                <input type="text" name="nom" placeholder="Nom de la rubrique"><br>
+                <button type="submit">Créer la rubrique</button>
+            </form>
+        </section>
+    </aside>
+    
+
+    <header>
+        <h1><span>Forum</span></h1>
+        <nav>
+            <ul class="navbar">
+                <li>
+                    <section class="logout">
+                        <form action="/logout" method="POST">
+                            <button type="submit">Déconnexion</button>
+                        </form>
+                    </section>
+                </li>
+                <li>
+                    <section class="profile-icon">
+                        <!-- Icône de profil -->
+                        <a href="/profile">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </section>
+                </li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="main-content">
+        <section>
+            <h5>{{ .Rubrique.Nom }}</h5>
+
+            {{range .Messages}}
+            <div class="message-container">
+                <div class="author-info">
+                    {{if eq .Gender "male"}}
+                        <img class="profile-image" src="/static/pere.png" alt="Avatar Homme"> 
+                    {{else if eq .Gender "female"}}
+                        <img class="profile-image" src="/static/petite-fille.png" alt="Avatar Femme"> 
+                    {{else}}
+                        <img class="profile-image" src="/static/default_avatar.png" alt="Avatar par défaut"> 
+                    {{end}}
+                    {{ if ne .Auteur "" }}
+                        <p>{{.Auteur}}</p>
+                    {{ end }}
+                </div>
+                {{ if ne .Titre "" }}
+                    <h3>{{.Titre}}</h3>
+                {{ end }}
+                {{ if ne .Contenu "" }}
+                    <p>{{.Contenu}}</p>
+                {{ end }}
+                {{ if .DateCreation }}
+                    <p>Date de création : {{.DateCreation.Format "02 Jan 2006 15:04:05"}}</p>
+                {{ end }}
+            </div>
+        {{end}}
+        
+
+        </section>
+
+        <section>
+            <h2>Créer un nouveau message dans cette rubrique</h2>
+            <form action="/create-message" method="post">
+                <input type="text" name="titre" placeholder="Titre"><br>
+                <textarea name="contenu" placeholder="Contenu"></textarea><br>
+                <!-- Champ caché pour stocker l'ID de la rubrique -->
+                <input type="hidden" name="rubrique_id" value="{{ .Rubrique.ID }}">
+                <button type="submit">Créer le message</button>
+            </form>
+        </section>
+
+        <section>
+            <a href="/">Retour à la page principale</a>
+        </section>
+    </main>
+
+    <script>
+        // Fonction pour afficher ou cacher le formulaire de création de rubrique
+        document.getElementById("show-create-rubrique-form").addEventListener("click", function() {
+            var createRubriqueForm = document.getElementById("create-rubrique-form");
+            if (createRubriqueForm.style.display === "none") {
+                createRubriqueForm.style.display = "block";
+            } else {
+                createRubriqueForm.style.display = "none";
+            }
+        });
+    </script>
+</body>
+</html>

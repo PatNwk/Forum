@@ -1,0 +1,38 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.profile-container {
+    width: 80%;
+    margin: 50px auto;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    font-size: 24px;
+    margin-bottom: 20px;
+}
+
+.profile-container p {
+    font-size: 16px;
+    margin-bottom: 10px;
+}
+
+.profile-container p span {
+    font-weight: bold;
+}
+
+.profile-container p:last-child {
+    margin-bottom: 0;
+}
+
+.profile-image {
+    width: 10%; 
+    height: auto; 
+}
+

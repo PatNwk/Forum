@@ -1,0 +1,185 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+}
+
+.main-content {
+    margin-left: 17%; 
+}
+
+section {
+    margin: 20px;
+}
+
+.message-container {
+    background-color: #ffffff;
+    padding: 10px;
+    margin-bottom: 10px;    
+    width: 70%;
+}
+
+.message-container h3 {
+    margin-top: 0;
+}
+
+.message-container p {
+    margin: 5px 0;
+}
+
+form input[type="text"],
+form textarea,
+form select {
+    width: 100%;
+    margin-bottom: 10px;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+}
+
+form button[type="submit"] {
+    padding: 10px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+form button[type="submit"]:hover {
+    background-color: #555;
+}
+
+button {
+    padding: 10px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #555;
+}
+
+.logout {
+    margin-right: 20px;
+    display: inline;
+}
+
+.logout button {
+    padding: 10px;
+    background-color: #333;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+
+.logout button:hover {
+    background-color: #555;
+}
+
+h5{
+    color: #000000;
+    font-size: 3em;
+    font-weight: bold;
+}
+
+.profile-image {
+    width: 3%; 
+    height: auto;
+}
+
+.author-info {
+    display: flex; 
+    align-items: center; 
+    margin-bottom: 5px; 
+    margin-bottom: 2%;
+}
+
+.message-container .profile-image {
+    width: 50px; 
+    height: auto;
+    margin-right: 10px;
+}
+
+.user-message {
+    background-color: #d3f8d3; 
+}
+
+
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 15% auto;
+    padding: 20px;
+    border: 1px solid #888;
+    width: 50%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+}
+
+.close:hover,
+.close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+
+
+.creation-date {
+    color: #888; 
+    font-style: italic;
+    font-size: 0.7vw;
+}
+
+.newmess{
+    position: fixed;
+    margin-left: 70%;
+    top: 850px; 
+
+}
+
+a.retouraulobby {
+    display: inline-block; 
+    position: fixed;
+    padding: 10px 20px;
+    background-color: #333; 
+    color: #ffffff; 
+    text-decoration: none; 
+    border-radius: 5px; 
+    transition: background-color 0.3s ease;
+    margin-left:83%;
+    top: 0;
+    position: fixed;
+    margin-top: 10%;
+}
+
+
+a.retouraulobby:hover {
+    background-color: #555; 
+    color: #ffffff; 
+}
+
+
+a.retouraulobby:visited {
+    color: #ffffff; 
+}
+

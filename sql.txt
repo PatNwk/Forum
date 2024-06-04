@@ -1,0 +1,34 @@
+CREATE TABLE `Rubriques` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom` varchar(255) NOT NULL,
+  PRIMARY KEY (`id`)
+)
+
+
+  CREATE TABLE `Utilisateurs` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `nom_utilisateur` varchar(255) NOT NULL,
+  `mot_de_passe` varchar(255) NOT NULL,
+  `email` varchar(255) NOT NULL,
+  `photo_profil` longblob,
+  `gender` varchar(10) DEFAULT NULL,
+  `nationality` varchar(50) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `first_name` varchar(255) DEFAULT NULL,
+  `last_name` varchar(255) DEFAULT NULL,
+  `isAdmin` tinyint(1) DEFAULT '0',
+  PRIMARY KEY (`id`)
+  )
+
+
+  ATE TABLE `Messages` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `titre` varchar(255) NOT NULL,
+  `contenu` text NOT NULL,
+  `date_creation` datetime DEFAULT CURRENT_TIMESTAMP,
+  `auteur_id` int NOT NULL,
+  `rubrique_id` int DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `auteur_id` (`auteur_id`),
+  CONSTRAINT `messages_ibfk_1` FOREIGN KEY (`auteur_id`) REFERENCES `Utilisateurs` (`id`)
+  )

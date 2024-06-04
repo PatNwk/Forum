@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <link rel="stylesheet" href="/static/logged.css">
+    <link rel="stylesheet" href="/static/h.css">
+    <link rel="stylesheet" href="/static/sidebar.css">
+    
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forum</title>
+    
+</head>
+<body>
+    <header>
+        <h1><span>Forum</span></h1>
+        <nav>
+            <ul class="navbar">
+                <li>
+                    <section class="logout">
+                        <form action="/logout" method="POST">
+                            <button type="submit">Déconnexion</button>
+                        </form>
+                    </section>
+                </li>
+                <li>
+                    <section class="profile-icon">
+                        <!-- Icône de profil -->
+                        <a href="/profile">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
+                    </section>
+                </li>
+            </ul>
+        </nav>
+    </header>
+    
+    
+
+    <aside class="sidebar">
+        <nav>
+            <ul>
+                <h4>Rubriques</h4>
+                <!-- Boucle sur les rubriques pour afficher chaque rubrique dans la barre latérale -->
+                {{ range .Rubriques }}
+                <li><a href="/rubrique?id={{ .ID }}">{{ .Nom }}</a></li>
+                {{ end }}
+                <!-- Bouton pour créer une nouvelle rubrique -->
+                <li><button id="show-create-rubrique-form">Créer une rubrique</button></li>
+            </ul>
+        </nav>
+        <section id="create-rubrique-form" style="display: none;">
+            <h2>Créer une nouvelle rubrique</h2>
+            <form action="/create-rubrique" method="post">
+                <input type="text" name="nom" placeholder="Nom de la rubrique"><br>
+                <button type="submit">Créer la rubrique</button>
+            </form>
+        </section>
+    </aside>
+
+
+
+    <script>
+        // Fonction pour afficher ou cacher le formulaire de création de rubrique dans la sidebar
+        document.getElementById("show-create-rubrique-form").addEventListener("click", function() {
+            var createRubriqueForm = document.getElementById("create-rubrique-form");
+            if (createRubriqueForm.style.display === "none") {
+                createRubriqueForm.style.display = "block";
+            } else {
+                createRubriqueForm.style.display = "none"; 
+
+            }
+        });
+    </script>
+     <div class="main-content">
+     
+</body>
+</html>

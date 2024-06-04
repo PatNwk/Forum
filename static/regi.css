@@ -1,0 +1,100 @@
+
+.container {
+    background-color: #ff0000;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 300px;
+}
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    /* Remplacez l'URL ci-dessous par l'URL de votre image de fond */
+    background-image: url('waves-purple-2880x1800-11757.png');
+    background-repeat: no-repeat; 
+    background-size: cover;
+}
+
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    padding-top: 100px;
+}
+
+h1 {
+    margin-top: 0%;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 30%;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    border-bottom: 1px solid black;
+    box-sizing: border-box;
+
+}
+
+button[type="submit"] {
+    width: 100%;
+    background-color: blue;
+    color: #fff;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10%;
+}
+
+button[type="submit"]:hover {
+    background-color: rgb(93, 0, 255);
+}
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
+/* Style des boutons radio */
+
+
+/* Style des libellés des boutons radio */
+label.gender-label {
+    display: inline-block;
+    margin-right: 20px;
+    cursor: pointer;
+}
+
+/* Style des boutons radio personnalisés */
+input[type="radio"] + label.gender-label:before {
+    content: "";
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    margin-right: 5px;
+    vertical-align: middle;
+}
+
+/* Style des boutons radio cochés */
+input[type="radio"]:checked + label.gender-label:before {
+    background-color: #333;
+}
+

@@ -1,0 +1,74 @@
+body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-image: url('waves-purple-2880x1800-11757.png');
+    background-repeat: no-repeat; 
+    background-size: cover;
+}
+
+.container {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    width: 300px;
+    padding-top: 100px;
+}
+
+h1 {
+    margin-top: 0%;
+    text-align: center;
+    color: #333;
+    margin-bottom: 20px;
+    padding-bottom: 30%;
+}
+
+input[type="text"],
+input[type="password"] {
+    width: 100%;
+    padding: 10px;
+    margin: 5px 0;
+    border: none;
+    border-bottom: 1px solid black;
+    box-sizing: border-box;
+
+}
+
+button[type="submit"] {
+    width: 100%;
+    background-color: blue;
+    color: #fff;
+    padding: 10px;
+    margin-top: 10px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    margin-top: 10%;
+}
+
+button[type="submit"]:hover {
+    background-color: rgb(93, 0, 255);
+}
+
+.error-message {
+    color: red;
+    text-align: center;
+    margin-top: 10px;
+}
+
+.pascompte {
+    text-align: center;
+    margin-top: 10%;
+}
+
+a {
+    text-align: center;
+    color: rgb(93, 0, 255);
+    text-decoration: none;
+}

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profil</title>
+    <link rel="stylesheet" href="/static/profile.css">
+    <link rel="stylesheet" href="/static/lobby.css">
+</head>
+<body>
+    <div class="profile-container">
+        <h1>Profil de {{.FirstName}} {{.LastName}}</h1>
+        {{if eq .Gender "male"}}
+            <!-- Icône de profil masculin -->
+            <img class="profile-image" src="/static/pere.png" alt="Avatar Homme"> 
+        {{else if eq .Gender "female"}}
+            <!-- Icône de profil féminin -->
+            <img class="profile-image" src="/static/petite-fille.png" alt="Avatar Femme"> 
+        {{else}}
+            <!-- Icône de profil par défaut -->
+            <img class="profile-image" src="/static/default_avatar.png" alt="Avatar par défaut"> 
+        {{end}}
+        <p><span>Prénom :</span> {{.FirstName}}</p>
+        <p><span>Nom de famille :</span> {{.LastName}}</p>
+        <p><span>Nom d'utilisateur :</span> {{.Username}}</p>
+        <p><span>Email :</span> {{.Email}}</p>
+        <p><span>Genre :</span> {{.Gender}}</p>
+        <p><span>Nationalité :</span> {{.Nationality}}</p>
+        <p><span>Date de création du compte :</span> {{.CreatedAt}}</p>
+    </div>
+    <section>
+        <a href="/" class="retouraulobby">Retour à la page principale</a>
+    </section>
+</body>
+</html>

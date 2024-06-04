@@ -1,0 +1,539 @@
+package main
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"html/template"
+	"net/http"
+	"net/url"
+	"time"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/sessions"
+)
+
+var db *sql.DB
+var store = sessions.NewCookieStore([]byte("your-secret-key"))
+
+type User struct {
+	ID          int
+	Username    string
+	Password    string
+	Email       string
+	Photo       []byte
+	Gender      string
+	Nationality string
+	FirstName   string
+	LastName    string
+	CreatedAt   time.Time
+}
+
+type Rubrique struct {
+	ID  int
+	Nom string
+}
+
+type RubriquePageData struct {
+	Messages  []Message
+	Rubrique  Rubrique
+	Rubriques []Rubrique
+}
+
+type Message struct {
+	ID           int
+	Titre        string
+	Contenu      string
+	DateCreation time.Time
+	Auteur       string
+	Gender       string
+}
+
+func indexHandler(w http.ResponseWriter, r *http.Request) {
+	rubriqueID := r.FormValue("rubrique_id") // Récupérer l'ID de la rubrique depuis les paramètres de la requête
+
+	var rows *sql.Rows
+	var err error
+
+	if rubriqueID != "" {
+		// Si un ID de rubrique est spécifié, filtrer les messages par cette rubrique
+		rows, err = db.Query("SELECT m.id, m.titre, m.contenu, m.date_creation, u.nom_utilisateur FROM Messages m JOIN Utilisateurs u ON m.auteur_id = u.id WHERE m.rubrique_id = ? ORDER BY m.date_creation DESC", rubriqueID)
+	} else {
+		// Sinon, récupérer tous les messages
+		rows, err = db.Query("SELECT m.id, m.titre, m.contenu, m.date_creation, u.nom_utilisateur FROM Messages m JOIN Utilisateurs u ON m.auteur_id = u.id ORDER BY m.date_creation DESC")
+	}
+
+	if err != nil {
+		http.Error(w, "Erreur lors de la récupération des messages: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	var messages []Message
+
+	for rows.Next() {
+		var msg Message
+		var dateCreationStr string
+		err := rows.Scan(&msg.ID, &msg.Titre, &msg.Contenu, &dateCreationStr, &msg.Auteur)
+		if err != nil {
+			http.Error(w, "Erreur lors de la lecture des messages: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		msg.DateCreation, err = time.Parse("2006-01-02 15:04:05", dateCreationStr)
+		if err != nil {
+			http.Error(w, "Erreur lors de la conversion de la date: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		messages = append(messages, msg)
+	}
+	if err := rows.Err(); err != nil {
+		http.Error(w, "Erreur lors de la lecture des messages: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Récupérer les rubriques depuis la base de données
+	rubriques, err := getRubriques()
+	if err != nil {
+		http.Error(w, "Erreur lors de la récupération des rubriques: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	type PageData struct {
+		Messages  []Message
+		Rubriques []Rubrique
+	}
+
+	data := PageData{
+		Messages:  messages,
+		Rubriques: rubriques,
+	}
+
+	tmpl, err := template.ParseFiles("templates/loggedin.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func loginHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		http.Error(w, "Méthode non autorisée", http.StatusMethodNotAllowed)
+		return
+	}
+
+	tmpl, err := template.ParseFiles("templates/login.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Error string
+	}{
+		r.URL.Query().Get("error"),
+	}
+
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func loginSubmitHandler(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	password := r.FormValue("password")
+
+	query := "SELECT id FROM Utilisateurs WHERE nom_utilisateur = ? AND mot_de_passe = ?"
+	var userID int
+	err := db.QueryRow(query, username, password).Scan(&userID)
+	if err != nil {
+		http.Error(w, "Erreur lors de la connexion", http.StatusInternalServerError)
+		return
+	}
+
+	if userID != 0 {
+		session, err := store.Get(r, "session-name")
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		session.Values["authenticated"] = true
+		session.Values["userID"] = userID
+
+		err = session.Save(r, w)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		http.Redirect(w, r, "/", http.StatusSeeOther)
+	} else {
+		http.Redirect(w, r, "/login?error=invalid_credentials", http.StatusSeeOther)
+	}
+}
+
+func registerHandler(w http.ResponseWriter, r *http.Request) {
+	tmpl, err := template.ParseFiles("templates/register.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	data := struct {
+		Error string
+	}{
+		r.URL.Query().Get("error"),
+	}
+
+	err = tmpl.Execute(w, data)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func createUser(username, email, password, firstName, lastName, gender, nationality string) error {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM Utilisateurs WHERE nom_utilisateur = ? OR email = ?", username, email).Scan(&count)
+	if err != nil {
+		return err
+	}
+
+	if count > 0 {
+		return errors.New("invalid_credentials")
+	}
+
+	query := "INSERT INTO Utilisateurs (nom_utilisateur, mot_de_passe, email, first_name, last_name, gender, nationality) VALUES (?, ?, ?, ?, ?, ?, ?)"
+	_, err = db.Exec(query, username, password, email, firstName, lastName, gender, nationality)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func registerSubmitHandler(w http.ResponseWriter, r *http.Request) {
+	username := r.FormValue("username")
+	email := r.FormValue("email")
+	password := r.FormValue("password")
+	firstName := r.FormValue("first_name")
+	lastName := r.FormValue("last_name")
+	gender := r.FormValue("gender")           // Récupérer le genre depuis le formulaire
+	nationality := r.FormValue("nationality") // Récupérer la nationalité depuis le formulaire
+
+	err := createUser(username, email, password, firstName, lastName, gender, nationality)
+	if err != nil {
+		http.Redirect(w, r, "/register?error="+url.QueryEscape(err.Error()), http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func createMessageHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	titre := r.FormValue("titre")
+	contenu := r.FormValue("contenu")
+	rubriqueID := r.FormValue("rubrique_id") // Récupérer l'ID de la rubrique depuis le formulaire
+	userID := getCurrentUserID(r)
+	if userID == 0 {
+		http.Error(w, "Utilisateur non connecté", http.StatusUnauthorized)
+		return
+	}
+
+	// Insérer le nouveau message dans la base de données en spécifiant la rubrique_id
+	_, err = db.Exec("INSERT INTO Messages (titre, contenu, auteur_id, rubrique_id) VALUES (?, ?, ?, ?)", titre, contenu, userID, rubriqueID)
+	if err != nil {
+		http.Error(w, "Erreur lors de la création du message", http.StatusInternalServerError)
+		return
+	}
+
+	// Rediriger l'utilisateur vers la page de la rubrique après la création du message
+	http.Redirect(w, r, "/rubrique?id="+rubriqueID, http.StatusSeeOther)
+}
+
+func getCurrentUserID(r *http.Request) int {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		return 0
+	}
+
+	if auth, ok := session.Values["authenticated"].(bool); !ok || !auth {
+		return 0
+	}
+
+	userID, ok := session.Values["userID"].(int)
+	if !ok {
+		return 0
+	}
+
+	return userID
+}
+
+func loggedInHandler(w http.ResponseWriter, r *http.Request) {
+	userID := getCurrentUserID(r)
+	if userID == 0 {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	// Note: UserData n'est pas utilisé dans cette fonction
+
+	tmpl, err := template.ParseFiles("templates/loggedin.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, nil) // Aucune donnée à passer au modèle pour le moment
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func logoutHandler(w http.ResponseWriter, r *http.Request) {
+	session, err := store.Get(r, "session-name")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	delete(session.Values, "authenticated")
+	delete(session.Values, "userID")
+
+	err = session.Save(r, w)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/login", http.StatusSeeOther)
+}
+
+func createRubriqueHandler(w http.ResponseWriter, r *http.Request) {
+	nom := r.FormValue("nom")
+	_, err := db.Exec("INSERT INTO Rubriques (nom) VALUES (?)", nom)
+	if err != nil {
+		http.Error(w, "Erreur lors de la création de la rubrique", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+func rubriqueHandler(w http.ResponseWriter, r *http.Request) {
+	// Récupérer l'ID de la rubrique à partir des paramètres de la requête
+	rubriqueID := r.FormValue("id")
+
+	// Récupérer les messages de la rubrique depuis la base de données
+	messages, err := getMessagesForRubrique(rubriqueID)
+	if err != nil {
+		http.Error(w, "Erreur lors de la récupération des messages: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Récupérer les détails de la rubrique depuis la base de données
+	rubrique, err := getRubriqueByID(rubriqueID)
+	if err != nil {
+		http.Error(w, "Erreur lors de la récupération des détails de la rubrique: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Récupérer toutes les rubriques
+	rubriques, err := getRubriques()
+	if err != nil {
+		http.Error(w, "Erreur lors de la récupération des rubriques: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Analyser le modèle de page
+	tmpl, err := template.ParseFiles("templates/rubrique.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Afficher la page avec les messages de la rubrique et les détails de la rubrique
+	err = tmpl.Execute(w, RubriquePageData{
+		Messages:  messages,
+		Rubrique:  rubrique,
+		Rubriques: rubriques,
+	})
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+func getRubriques() ([]Rubrique, error) {
+	rows, err := db.Query("SELECT id, nom FROM Rubriques")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var rubriques []Rubrique
+
+	for rows.Next() {
+		var rubrique Rubrique
+		if err := rows.Scan(&rubrique.ID, &rubrique.Nom); err != nil {
+			return nil, err
+		}
+		rubriques = append(rubriques, rubrique)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return rubriques, nil
+}
+
+func getMessagesForRubrique(rubriqueID string) ([]Message, error) {
+	query := `
+        SELECT m.id, m.titre, m.contenu, m.date_creation, u.nom_utilisateur, u.gender
+        FROM Messages m 
+        JOIN Utilisateurs u ON m.auteur_id = u.id 
+        WHERE m.rubrique_id = ?`
+
+	rows, err := db.Query(query, rubriqueID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var messages []Message
+
+	for rows.Next() {
+		var msg Message
+		var dateCreationStr string
+		err := rows.Scan(&msg.ID, &msg.Titre, &msg.Contenu, &dateCreationStr, &msg.Auteur, &msg.Gender)
+		if err != nil {
+			return nil, err
+		}
+		msg.DateCreation, err = time.Parse("2006-01-02 15:04:05", dateCreationStr)
+		if err != nil {
+			return nil, err
+		}
+		messages = append(messages, msg)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
+}
+
+func getRubriqueByID(rubriqueID string) (Rubrique, error) {
+	var rubrique Rubrique
+
+	// Exemple de requête SQL pour récupérer les détails d'une rubrique spécifique
+	query := "SELECT id, nom FROM Rubriques WHERE id = ?"
+
+	// Exécute la requête SQL en utilisant l'identifiant de la rubrique spécifiée
+	err := db.QueryRow(query, rubriqueID).Scan(&rubrique.ID, &rubrique.Nom)
+	if err != nil {
+		return Rubrique{}, err
+	}
+
+	return rubrique, nil
+}
+
+// profileHandler affiche la page du profil utilisateur
+// profileHandler affiche la page du profil utilisateur
+func profileHandler(w http.ResponseWriter, r *http.Request) {
+	userID := getCurrentUserID(r)
+	if userID == 0 {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	user, err := getUserByID(userID)
+	if err != nil {
+		http.Error(w, "Erreur lors de la récupération des données de l'utilisateur: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	tmpl, err := template.ParseFiles("templates/profile.html")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	err = tmpl.Execute(w, user)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+}
+
+// getUserByID récupère les données de l'utilisateur à partir de son ID
+func getUserByID(userID int) (User, error) {
+	var user User
+
+	query := "SELECT id, nom_utilisateur, email, photo_profil, gender, nationality, first_name, last_name, created_at FROM Utilisateurs WHERE id = ?"
+
+	var createdAtStr string
+	err := db.QueryRow(query, userID).Scan(&user.ID, &user.Username, &user.Email, &user.Photo, &user.Gender, &user.Nationality, &user.FirstName, &user.LastName, &createdAtStr)
+	if err != nil {
+		return User{}, err
+	}
+
+	createdAt, err := time.Parse("2006-01-02 15:04:05", createdAtStr)
+	if err != nil {
+		return User{}, err
+	}
+
+	user.CreatedAt = createdAt
+
+	return user, nil
+}
+
+func main() {
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	var err error
+	db, err = sql.Open("mysql", "root:patryk06@tcp(127.0.0.1:3306)/sys")
+	if err != nil {
+		panic(err.Error())
+	}
+	defer db.Close()
+
+	http.HandleFunc("/logout", logoutHandler)
+	http.HandleFunc("/", indexHandler)
+	http.HandleFunc("/login", loginHandler)
+	http.HandleFunc("/login-submit", loginSubmitHandler)
+	http.HandleFunc("/register", registerHandler)
+	http.HandleFunc("/register-submit", registerSubmitHandler)
+	http.HandleFunc("/create-message", createMessageHandler)
+	http.HandleFunc("/loggedin", loggedInHandler)
+	http.HandleFunc("/create-rubrique", createRubriqueHandler)
+	http.HandleFunc("/rubrique", rubriqueHandler)
+	http.HandleFunc("/profile", profileHandler)
+
+	fmt.Println("Serveur démarré sur le port 8080...")
+	err = http.ListenAndServe(":8080", nil)
+	if err != nil {
+		panic(err.Error())
+	}
+}
